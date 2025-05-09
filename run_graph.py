@@ -6,6 +6,16 @@ from agents.insights import insight_node
 from typing import TypedDict, List
 import sys
 
+TODO
+"""
+1. Update the segmenter agent function
+2. update the prompts in summarizer agent function
+3. update the insights agent function to use the new summarizer output
+4. add fastapi for backend
+5. add a frontend using streamlit or reactjs
+6. add a dockerfile for deployment
+"""
+
 # create the GraphState
 class GraphState(TypedDict):
     video_url: str

@@ -14,3 +14,7 @@ langchainhub
 langsmith
 fpdf
 graphviz
+fastapi
+flask
+streamlit
+uvicorn
