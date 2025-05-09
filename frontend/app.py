@@ -1,5 +1,10 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 import requests
+from utils.pdf_utils import generate_pdf_bytes
 
 
 st.set_page_config(page_title="Youtube Summarizer Agent", layout="wide")
@@ -26,6 +31,18 @@ if st.button("Summarize"):
                 insights = data.get("insights", [])
                 st.subheader("🔍Insights")
                 st.markdown(insights if insights else "No insights available.")
+
+                # generate and serve PDF
+                pdf_bytes = generate_pdf_bytes(summary, insights)
+
+                # show download button
+                st.download_button(
+                    label = "Download Summary as PDF",
+                    data = pdf_bytes,
+                    file_name = "youtube_summary.pdf",
+                    mime = "application/pdf",
+                )
+
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
         except Exception as e:

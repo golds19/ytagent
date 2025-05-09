@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from graph.pipeline import build_graph
+import warnings
+
+warnings.filterwarnings("ignore")
 
 app = FastAPI()
 graph = build_graph()

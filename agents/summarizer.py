@@ -8,7 +8,7 @@ load_dotenv()
 llm = ChatOpenAI(temperature=0, model="gpt-4o-mini-2024-07-18")
 
 def summarize_segment(text):
-    prompt = f"Summarize the following transcript segment:\n\n{text}\n\nSummary:"
+    prompt = f"Please summarize the following transcript segment, highlighting the key points and main ideas:\n\n{text}\n\nSummary:"
     result =  llm.invoke(prompt)
 
     return result.content
