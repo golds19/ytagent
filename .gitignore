@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+*.log
+*.tmp
+.env
+.env.*
+.DS_Store
+
+# Virtual Environments
+venv/
+env/
+myenv/
+.mypy_cache/
+.pytest_cache/
+.env/
+
+# OS-specific
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Jupyter and notebooks
+.ipynb_checkpoints/
+
+# Audio/Video/Temp files
+*.mp3
+*.wav
+*.webm
+*.m4a
+*.mp4
+*.avi
+*.mkv
+
+# Outputs
+summary_output.*
+workflow_graph.*
+
+# VS Code
+.vscode/
+
+# LangChain/LangGraph/Streamlit Logs
+.langchain/
+.langgraph/
+streamlit_logs/

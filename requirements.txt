@@ -1,0 +1,16 @@
+youtube-transcript-api
+langchain
+openai
+pydantic
+python-dotenv
+requests
+beautifulsoup4
+crewai
+langgraph
+tiktoken
+beautifulsoup4
+langchain_community
+langchainhub
+langsmith
+fpdf
+graphviz
