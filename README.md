@@ -39,7 +39,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 ### 4. Run the backend server
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload
 ```
 
 ### 5. Run the frontend (Streamlit)
@@ -47,8 +47,6 @@ uvicorn app.main:app --reload --port 8000
 ```bash
 streamlit run frontend/app.py
 ```
-
-Access the app at [http://localhost:8501](http://localhost:8501)
 
 ## 🛠 Tech Stack
 
