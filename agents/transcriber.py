@@ -1,4 +1,4 @@
-from youtube_transcript_api import YouTubeTranscriptApi as ytapi
+from youtube_transcript_api import YouTubeTranscriptApi
 
 def get_video_id(url: str) -> str:
     """
@@ -15,17 +15,19 @@ def transcriber_node(state):
     video_url = state["video_url"]
     video_id = get_video_id(video_url)
     try:
-        data = ytapi.get_transcript(video_id, languages=['en'])
-        final_transcript = ''
-        for val in data:
-            for key, value in val.items():
-                if key == 'text':
-                    final_transcript += value
-                else:
-                    pass
-        process_data = final_transcript.split()
-        clean_transcript = ' '.join(process_data)
-        return {"transcript": clean_transcript}
+        ytt_api = YouTubeTranscriptApi()
+        fetched_transcript = ytt_api.fetch(video_id)
+        transcript = ' '.join(snippet.text for snippet in fetched_transcript)
+        #print(f"fetched transcript: {transcript}")
+        return {"transcript": transcript}
     except Exception as e:
+        print(e)
         return {"error": f"Transcript not found: {e}"}
+    
+if __name__ == "__main__":
+    url = "https://www.youtube.com/watch?v=eE6yvtKLwvk"
+    id = get_video_id(url)
+    res = transcriber_node(url)
+    print(id)
+    print(res)
     

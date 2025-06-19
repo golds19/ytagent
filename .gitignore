@@ -1,11 +1,11 @@
 # Python
 __pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-*.egg-info/
-*.log
-*.tmp
+.py[cod]
+.pyo
+.pyd
+.egg-info/
+.log
+.tmp
 .env
 .env.*
 .DS_Store
@@ -47,3 +47,6 @@ workflow_graph.*
 .langchain/
 .langgraph/
 streamlit_logs/
+docker-compose.yml
+Dockerfile
+.dockerignore

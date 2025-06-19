@@ -1,8 +1,8 @@
 # youtube-summarizer/app/services/transcript_handler.py
 
 from youtube_transcript_api import YouTubeTranscriptApi
-# import yt_dlp
-# import whisper
+import yt_dlp
+import whisper
 import os
 
 def get_youtube_transcript(video_url):

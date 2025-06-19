@@ -6,7 +6,6 @@ from agents.insights import insight_node
 from typing import TypedDict, List
 import sys
 
-TODO
 """
 1. Update the segmenter agent function
 2. update the prompts in summarizer agent function

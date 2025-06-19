@@ -1,5 +1,5 @@
 
-def segment_transcript(transcript, max_word_count=100):
+def segment_transcript(transcript, max_word_count=150):
     """
     Segments the transcript into smaller parts based on the max word count.
     """
