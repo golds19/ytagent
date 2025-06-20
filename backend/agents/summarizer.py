@@ -1,4 +1,6 @@
-from langchain.chat_models import ChatOpenAI
+# from langchain.chat_models import ChatOpenAI
+#from langchain_community.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 

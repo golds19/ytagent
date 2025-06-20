@@ -1,0 +1,12 @@
+youtube-transcript-api
+langchain
+openai
+pydantic
+python-dotenv
+requests
+langgraph
+langchain_community
+langsmith
+fastapi
+uvicorn
+langchain-openai

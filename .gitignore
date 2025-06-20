@@ -47,6 +47,4 @@ workflow_graph.*
 .langchain/
 .langgraph/
 streamlit_logs/
-docker-compose.yml
-Dockerfile
 .dockerignore
