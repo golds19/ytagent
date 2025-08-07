@@ -6,6 +6,7 @@ python-dotenv
 requests
 langgraph
 langchain_community
+langchain-ollama
 langsmith
 fpdf
 fastapi
@@ -13,3 +14,6 @@ streamlit
 uvicorn
 openai-whisper
 yt-dlp
+graphviz
+beautifulsoup4 
+firecrawl

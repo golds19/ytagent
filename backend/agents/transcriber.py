@@ -1,33 +1,74 @@
 from youtube_transcript_api import YouTubeTranscriptApi
+from typing import Dict, Any, Optional
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_video_id(url: str) -> str:
     """
     Extracts the video ID from a Youtube URL
     """
+    if not url:
+        raise ValueError("No URL provided")
+        
     if "v=" in url:
         return url.split("v=")[1].split("&")[0]
     elif "youtu.be/" in url:
         return url.split("youtu.be/")[1].split("?")[0]
     else:
-        raise ValueError("Invalid YouTube URL")
+        raise ValueError("Invalid YouTube URL format")
     
-def transcriber_node(state):
-    video_url = state["video_url"]
-    video_id = get_video_id(video_url)
+def transcriber_node(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Node function for transcribing YouTube videos.
+    Expects 'video_url' in state and returns transcript or error.
+    """
     try:
-        ytt_api = YouTubeTranscriptApi()
-        fetched_transcript = ytt_api.fetch(video_id)
-        transcript = ' '.join(snippet.text for snippet in fetched_transcript)
-        #print(f"fetched transcript: {transcript}")
-        return {"transcript": transcript}
+        video_url = state.get("video_url")
+        if not video_url:
+            raise ValueError("No video URL provided in state")
+            
+        logger.info(f"Transcribing video: {video_url}")
+        video_id = get_video_id(video_url)
+        
+        try:
+            transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+            transcript = ' '.join(item['text'] for item in transcript_list)
+            
+            logger.info(f"Successfully transcribed video {video_id}")
+            return {
+                "transcript": transcript,
+                "error": None
+            }
+            
+        except Exception as e:
+            error_msg = f"Failed to fetch transcript: {str(e)}"
+            logger.error(error_msg)
+            return {
+                "error": error_msg,
+                "transcript": None
+            }
+            
+    except ValueError as ve:
+        error_msg = str(ve)
+        logger.error(f"URL validation error: {error_msg}")
+        return {
+            "error": error_msg,
+            "transcript": None
+        }
+        
     except Exception as e:
-        print(e)
-        return {"error": f"Transcript not found: {e}"}
-    
+        error_msg = f"Unexpected error in transcriber: {str(e)}"
+        logger.error(error_msg)
+        return {
+            "error": error_msg,
+            "transcript": None
+        }
+
 if __name__ == "__main__":
-    url = "https://www.youtube.com/watch?v=eE6yvtKLwvk"
-    id = get_video_id(url)
-    res = transcriber_node(url)
-    print(id)
-    print(res)
-    
+    # Test the transcriber
+    test_url = "https://www.youtube.com/watch?v=eE6yvtKLwvk"
+    result = transcriber_node({"video_url": test_url})
+    print(result)

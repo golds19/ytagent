@@ -2,8 +2,12 @@
 
 import openai
 from textwrap import wrap
+from dotenv import load_dotenv
+import os
 
-openai.api_key = "your-openai-api-key"  # Replace with env var in production
+load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")  # Load from environment variable
 
 # Split transcript into manageable chunks (~1500 tokens)
 def split_text(text, max_words=800):

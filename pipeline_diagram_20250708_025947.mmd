@@ -1,0 +1,12 @@
+
+        graph TD
+            START((Start)) --> A[YouTube URL]
+            A --> B[Transcriber]
+            B --> C[Classifier]
+            C --> D[Segmenter]
+            D -->|Long Content| E1[Segment-wise Summary]
+            D -->|Short Content| E2[Full Summary]
+            E1 --> F[Generate Insights]
+            E2 --> F
+            F --> END((End))
+        

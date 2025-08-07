@@ -1,191 +1,146 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 import streamlit as st
-import requests
-from utils.pdf_utils import generate_pdf_bytes
+import os
+from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
-def get_backend_url():
-    """
-    Determine backend URL based on environment
-    Returns backend service URL if running in Docker, localhost if running locally
-    """
-    # Method 1: Check for explicit environment variable first
-    backend_url = os.getenv("BACKEND_URL")
-    if backend_url:
-        return backend_url
+def main():
+    # Page config
+    st.set_page_config(
+        page_title="Content Summarizer",
+        page_icon="📝",
+        layout="wide"
+    )
     
-    # Method 2: Check if explicitly told we're in Docker
-    if os.getenv("RUNNING_IN_DOCKER", "").lower() == "true":
-        return "http://backend:8000"
+    # Add custom CSS for clickable cards
+    st.markdown("""
+        <style>
+        .card {
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 100%;
+            background-color: white;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: #1f77b4;
+        }
+        .card h3 {
+            margin-bottom: 15px;
+            color: #1f77b4;
+        }
+        .card ul {
+            text-align: left;
+            margin-top: 15px;
+            padding-left: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
-    # Method 3: Check for Docker indicators
-    if os.path.exists("/.dockerenv"):
-        return "http://backend:8000"
+    # Center the title and description
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("<h1 style='text-align: center;'>📝 Content Summarizer</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center;'>Welcome to Content Summarizer! Choose the type of content you want to summarize.</p>", unsafe_allow_html=True)
     
-    # Method 4: Check hostname (Docker containers often have random hostnames)
-    hostname = os.getenv("HOSTNAME", "")
-    if len(hostname) == 12 or "docker" in hostname.lower():
-        return "http://backend:8000"
+    # Create a centered container for the main content
+    col1, col2, col3 = st.columns([1, 2, 1])
     
-    # Default to localhost (running locally)
-    return "http://localhost:8000"
-
-
-def make_backend_request(youtube_url, max_retries=2):
-    """
-    Make request to backend with fallback URLs
-    """
-    # Primary URL based on environment detection
-    primary_url = get_backend_url()
-    
-    # Fallback URLs to try
-    urls_to_try = [primary_url]
-    
-    # Add fallback if primary isn't localhost
-    if primary_url != "http://localhost:8000":
-        urls_to_try.append("http://localhost:8000")
-    # Add fallback if primary isn't backend service
-    if primary_url != "http://backend:8000":
-        urls_to_try.append("http://backend:8000")
-    
-    last_error = None
-    
-    for i, url in enumerate(urls_to_try):
-        try:
-            st.info(f"🔗 Connecting to backend: {url}")
+    with col2:
+        st.markdown("""
+        <h3 style='text-align: center;'>Choose Your Summarization Tool</h3>
+        <p style='text-align: center;'>Select the type of content you want to analyze and summarize:</p>
+        """, unsafe_allow_html=True)
+        
+        # Create two cards for the different features
+        col_yt, col_web = st.columns(2)
+        
+        # YouTube Card
+        with col_yt:
+            youtube_clicked = st.markdown("""
+            <div class="card" onclick="window.location.href='YouTube_Summarizer'">
+                <h3>📺 YouTube Video</h3>
+                <p>Summarize YouTube videos with AI-powered analysis</p>
+                <ul>
+                    <li>Transcription</li>
+                    <li>Key points extraction</li>
+                    <li>Chapter generation</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
             
-            response = requests.post(
-                f"{url}/summarize",
-                json={"youtube_url": youtube_url},
-                timeout=30
-            )
+            # Hidden button for navigation (activated by JavaScript)
+            if st.button("YouTube", key="yt_nav", help="Navigate to YouTube Summarizer"):
+                st.switch_page("pages/youtube_summarizer.py")
+        
+        # Webpage Card
+        with col_web:
+            webpage_clicked = st.markdown("""
+            <div class="card" onclick="window.location.href='Webpage_Summarizer'">
+                <h3>🌐 Webpage</h3>
+                <p>Extract and summarize content from any webpage</p>
+                <ul>
+                    <li>Content extraction</li>
+                    <li>Smart filtering</li>
+                    <li>Concise summaries</li>
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
             
-            if response.status_code == 200:
-                st.success(f"✅ Connected successfully to: {url}")
-                return response
-            else:
-                st.warning(f"⚠️ Got status {response.status_code} from {url}")
-                last_error = f"Status {response.status_code}: {response.text}"
-                
-        except requests.exceptions.ConnectionError as e:
-            error_msg = f"Could not connect to {url}"
-            st.warning(f"❌ {error_msg}")
-            last_error = f"{error_msg}: {str(e)}"
-            
-        except requests.exceptions.Timeout as e:
-            error_msg = f"Timeout connecting to {url}"
-            st.warning(f"⏰ {error_msg}")
-            last_error = f"{error_msg}: {str(e)}"
-            
-        except Exception as e:
-            error_msg = f"Error with {url}"
-            st.warning(f"❌ {error_msg}: {str(e)}")
-            last_error = f"{error_msg}: {str(e)}"
+            # Hidden button for navigation (activated by JavaScript)
+            if st.button("Webpage", key="web_nav", help="Navigate to Webpage Summarizer"):
+                st.switch_page("pages/webpage_summarizer.py")
     
-    # If we get here, all URLs failed
-    raise Exception(f"All backend connections failed. Last error: {last_error}")
+    # Add JavaScript for handling card clicks
+    st.markdown("""
+        <script>
+        // Add click event listeners to cards
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                // Find and click the corresponding hidden button
+                const tool = this.querySelector('h3').textContent.includes('YouTube') ? 'yt_nav' : 'web_nav';
+                document.querySelector(`button[kind="primary"][data-testid="${tool}"]`).click();
+            });
+        });
+        </script>
+    """, unsafe_allow_html=True)
+    
+    # Add about section in an expander at the bottom
+    st.markdown("<br>", unsafe_allow_html=True)  # Add some spacing
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.expander("ℹ️ About Content Summarizer"):
+            st.markdown("""
+            This tool combines multiple AI technologies to provide intelligent content summarization:
+            
+            **YouTube Summarizer**
+            - Transcribes videos automatically
+            - Analyzes content for key points
+            - Generates structured chapter summaries
+            - Handles videos in multiple languages
+            
+            **Webpage Summarizer**
+            - Extracts relevant content from any webpage
+            - Filters out ads and irrelevant content
+            - Creates concise, readable summaries
+            - Preserves important context and details
+            
+            Both tools use advanced Natural Language Processing to ensure high-quality, 
+            relevant summaries that capture the essence of the content while removing noise 
+            and redundancy.
+            
+            Perfect for:
+            - Research and study
+            - Content analysis
+            - Quick information extraction
+            - Knowledge management
+            """)
 
-
-st.set_page_config(page_title="Youtube Summarizer Agent", layout="wide")
-st.title("Youtube Video Summarizer Powered by AI Agents")
-
-# Show current backend URL for debugging
-current_backend = get_backend_url()
-st.sidebar.info(f"🔧 Backend URL: {current_backend}")
-
-# Add environment info in sidebar for debugging
-# st.sidebar.write("**Environment Info:**")
-# st.sidebar.write(f"- Docker env: {os.path.exists('/.dockerenv')}")
-# st.sidebar.write(f"- BACKEND_URL: {os.getenv('BACKEND_URL', 'Not set')}")
-# st.sidebar.write(f"- RUNNING_IN_DOCKER: {os.getenv('RUNNING_IN_DOCKER', 'Not set')}")
-# st.sidebar.write(f"- HOSTNAME: {os.getenv('HOSTNAME', 'Not set')}")
-
-youtube_url = st.text_input("Enter Youtube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
-
-if st.button("Summarize"):
-    if not youtube_url:
-        st.error("Please enter a YouTube URL")
-    else:
-        with st.spinner("Running AI agents..."):
-            try:
-                response = make_backend_request(youtube_url)
-                data = response.json()
-
-                # get summaries
-                summary = data.get("summaries", [])
-                st.subheader("📑Summary")
-                st.markdown(summary if summary else "No summary available.")
-
-                # get insights
-                insights = data.get("insights", [])
-                st.subheader("🔍Insights")
-                st.markdown(insights if insights else "No insights available.")
-
-                # generate and serve PDF
-                pdf_bytes = generate_pdf_bytes(summary, insights)
-
-                # show download button
-                st.download_button(
-                    label="Download Summary as PDF",
-                    data=pdf_bytes,
-                    file_name="youtube_summary.pdf",
-                    mime="application/pdf",
-                )
-
-            except Exception as e:
-                st.error(f"Failed to connect to API: {e}")
-                st.error("Please check if the backend service is running.")
-
-
-# import sys
-# import os
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# import streamlit as st
-# import requests
-# from utils.pdf_utils import generate_pdf_bytes
-
-
-# st.set_page_config(page_title="Youtube Summarizer Agent", layout="wide")
-# st.title("Youtube Video Summarizer Powered by AI Agents")
-
-# youtube_url = st.text_input("Enter Youtube Video URL:", placeholder="https://www.youtube.com/watch?v=...")
-
-# if st.button("Summarize"):
-#     with st.spinner("Running AI agents..."):
-#         try:
-#             response = requests.post(
-#                 "http://backend:8000/summarize",
-#                 json={"youtube_url": youtube_url}
-#             )
-#             if response.status_code == 200:
-#                 data = response.json()
-
-#                 # get summaries
-#                 summary = data.get("summaries", [])
-#                 st.subheader("📑Summary")
-#                 st.markdown(summary if summary else "No summary available.")
-
-#                 # get insights
-#                 insights = data.get("insights", [])
-#                 st.subheader("🔍Insights")
-#                 st.markdown(insights if insights else "No insights available.")
-
-#                 # generate and serve PDF
-#                 pdf_bytes = generate_pdf_bytes(summary, insights)
-
-#                 # show download button
-#                 st.download_button(
-#                     label = "Download Summary as PDF",
-#                     data = pdf_bytes,
-#                     file_name = "youtube_summary.pdf",
-#                     mime = "application/pdf",
-#                 )
-
-#             else:
-#                 st.error(f"Error {response.status_code}: {response.text}")
-#         except Exception as e:
-#             st.error(f"Failed to connect to API: {e}")
+if __name__ == "__main__":
+    main()
