@@ -12,7 +12,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from graph.pipeline import create_pipeline, process_video
 import logging
-from ..webpage.webpage import WebpageSummarizer
+from webpage.webpage import WebpageSummarizer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
