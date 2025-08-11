@@ -8,7 +8,7 @@ from typing import Optional
 load_dotenv()
 
 # Constants
-API_URL = 'http://localhost:8000'
+API_URL =  os.getenv('BACKEND_URL', 'http://localhost:8000')
 
 def get_webpage_summary(url: str) -> tuple[Optional[str], Optional[dict]]:
     """Call the backend API to get webpage summary"""

@@ -8,7 +8,7 @@ from utils.pdf_utils import generate_pdf_bytes
 load_dotenv()
 
 # Constants
-API_URL = 'http://localhost:8000'
+API_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
 
 def process_video(youtube_url: str):
     """Process video through backend API"""
