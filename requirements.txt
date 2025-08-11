@@ -6,6 +6,7 @@ python-dotenv
 requests
 langgraph
 langchain_community
+langchain-google-genai
 langchain-ollama
 langsmith
 fpdf

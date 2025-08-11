@@ -1,5 +1,8 @@
+from operator import ge
+import os
 from langchain_openai import ChatOpenAI
 from langchain_ollama import OllamaLLM
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 import time
@@ -16,6 +19,8 @@ logger = logging.getLogger(__name__)
 # loading the environment variables from the .env file
 load_dotenv()
 
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+
 # Initialize LLMs
 openai_llm = ChatOpenAI(
     temperature=0,
@@ -26,6 +31,9 @@ ollama_llm = OllamaLLM(
     model="llama3.2:latest",
     temperature=0
 )
+geminiLlm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash", 
+    google_api_key=GEMINI_API_KEY)
 
 def get_summary_prompt(transcript: str, video_type: str, is_segment: bool = False, segment_info: Dict = None) -> str:
     """
@@ -115,8 +123,9 @@ def create_global_summary(segment_summaries: List[Dict], video_type: str) -> Dic
             result = openai_llm.invoke(prompt)
             summary_text = result.content if hasattr(result, 'content') else result
         except Exception as e:
-            logger.warning(f"OpenAI error for global summary, falling back to Ollama: {e}")
-            result = ollama_llm.invoke(prompt)
+           # logger.warning(f"OpenAI error for global summary, falling back to Ollama: {e}")
+            logger.warning(f"OpenAI error for global summary, falling back to Gemini: {e}")
+            result = geminiLlm.invoke(prompt)
             summary_text = result.content if hasattr(result, 'content') else result
         
         return {
@@ -125,7 +134,7 @@ def create_global_summary(segment_summaries: List[Dict], video_type: str) -> Dic
                 "type": "global_summary",
                 "video_type": video_type,
                 "created_at": datetime.now().isoformat(),
-                "model_used": "openai" if "openai" in str(type(result)) else "ollama",
+                "model_used": "openai" if "openai" in str(type(result)) else "gemini",
                 "segment_count": len(segment_summaries)
             }
         }
@@ -179,19 +188,19 @@ def summarize_segment(text: str, classification: str, segment_info: Dict = None)
             summary_text = result.content if hasattr(result, 'content') else result
             logger.info("Successfully got OpenAI summary")
         except Exception as e:
-            logger.warning(f"OpenAI error, falling back to Ollama: {e}")
+            logger.warning(f"OpenAI error, falling back to Gemini: {e}")
             try:
-                # Fallback to Ollama
-                logger.info(f"Using Ollama for {video_type} summarization")
-                result = ollama_llm.invoke(prompt)
+                # Fallback to Ollama / Gemini
+                logger.info(f"Using Gemini for {video_type} summarization")
+                result = geminiLlm.invoke(prompt)
                 if not result:
-                    raise Exception("Empty response from Ollama")
+                    raise Exception("Empty response from Gemini")
                 summary_text = result.content if hasattr(result, 'content') else result
-                logger.info("Successfully got Ollama summary")
+                logger.info("Successfully got Gemini summary")
             except Exception as e:
-                logger.error(f"Ollama error: {e}")
-                raise Exception(f"Both OpenAI and Ollama failed: {str(e)}")
-        
+                logger.error(f"Gemini error: {e}")
+                raise Exception(f"Both OpenAI and Gemini failed: {str(e)}")
+
         # Validate summary text
         if not isinstance(summary_text, str):
             logger.error(f"Summary text is not a string: {type(summary_text)}")
@@ -207,7 +216,7 @@ def summarize_segment(text: str, classification: str, segment_info: Dict = None)
             "metadata": {
                 "video_type": video_type,
                 "created_at": datetime.now().isoformat(),
-                "model_used": "openai" if "openai" in str(type(result)) else "ollama",
+                "model_used": "openai" if "openai" in str(type(result)) else "gemini",
                 "content_length": len(summary_text)
             }
         }

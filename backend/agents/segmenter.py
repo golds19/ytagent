@@ -18,7 +18,7 @@ THRESHOLDS = {
 # Target segment sizes
 SEGMENT_SIZE = {
     "TARGET": 1000,    # Ideal segment size
-    "MIN": 500,       # Minimum segment size
+    "MIN": 1000,       # Minimum segment size
     "MAX": 1500       # Maximum segment size
 }
 

@@ -1,7 +1,9 @@
 from langchain_openai import ChatOpenAI
 from langchain_ollama import OllamaLLM
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import logging
+import os
 import json
 from typing import Dict, Optional
 
@@ -12,6 +14,8 @@ logger = logging.getLogger(__name__)
 # loading the environment variables from the .env file
 load_dotenv()
 
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+
 # Initialize LLMs
 openai_llm = ChatOpenAI(
     temperature=0,
@@ -21,6 +25,10 @@ openai_llm = ChatOpenAI(
 ollama_llm = OllamaLLM(
     model="llama3.2:latest",
     temperature=0
+)
+geminiLlm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash", 
+    google_api_key=GEMINI_API_KEY
 )
 
 def validate_classification(raw_output: str) -> Optional[Dict]:
@@ -109,22 +117,22 @@ def classify_content(transcript: str) -> str:
             logger.info(f"Successfully classified content as {classification['type']} with {classification['confidence']} confidence")
             return json.dumps(classification)
             
-        # If OpenAI output is invalid, try Ollama
-        logger.warning("Invalid OpenAI classification output, falling back to Ollama")
-        
+        # If OpenAI output is invalid, try Gemini
+        logger.warning("Invalid OpenAI classification output, falling back to Gemini")
+
     except Exception as e:
-        logger.warning(f"OpenAI error, falling back to Ollama: {e}")
-    
+        logger.warning(f"OpenAI error, falling back to Gemini: {e}")
+
     try:
-        # Fallback to Ollama
-        logger.info("Using Ollama for classification")
-        result = ollama_llm.invoke(prompt)
+        # Fallback to Gemini
+        logger.info("Using Gemini for classification")
+        result = geminiLlm.invoke(prompt)
         if not result:
-            raise Exception("Empty response from Ollama")
-            
+            raise Exception("Empty response from Gemini")
+
         raw_output = result.content if hasattr(result, 'content') else result
-        
-        # Validate Ollama output
+
+        # Validate Gemini output
         classification = validate_classification(raw_output)
         if classification:
             logger.info(f"Successfully classified content as {classification['type']} with {classification['confidence']} confidence")
@@ -140,7 +148,7 @@ def classify_content(transcript: str) -> str:
         return json.dumps(default_classification)
         
     except Exception as e:
-        logger.error(f"Ollama error: {e}")
+        logger.error(f"Gemini error: {e}")
         # Return default classification on error
         default_classification = {
             "type": "General Content",

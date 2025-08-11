@@ -15,7 +15,7 @@ def process_video(youtube_url: str):
         response = requests.post(
             f"{API_URL}/summarize",
             json={"youtube_url": youtube_url},
-            timeout=300
+            timeout=1000
         )
         response.raise_for_status()
         return response.json()
@@ -72,19 +72,19 @@ def main():
                         st.markdown("No summaries available.")
                     
                     # Display chapters if available
-                    if "chapters" in result:
-                        st.subheader("📚 Chapters")
-                        for chapter in result["chapters"]:
-                            st.markdown(f"**{chapter['title']}**")
-                            st.markdown(chapter['content'])
+                    # if "chapters" in result:
+                    #     st.subheader("📚 Chapters")
+                    #     for chapter in result["chapters"]:
+                    #         st.markdown(f"**{chapter['title']}**")
+                    #         st.markdown(chapter['content'])
                     
                     # Display metadata
-                    with st.expander("📊 Video Metadata"):
-                        st.markdown(f"""
-                        - **Title**: {result.get("metadata", {}).get("title", "N/A")}
-                        - **Duration**: {result.get("metadata", {}).get("duration", "N/A")}
-                        - **Channel**: {result.get("metadata", {}).get("channel", "N/A")}
-                        """)
+                    # with st.expander("📊 Video Metadata"):
+                    #     st.markdown(f"""
+                    #     - **Title**: {result.get("metadata", {}).get("title", "N/A")}
+                    #     - **Duration**: {result.get("metadata", {}).get("duration", "N/A")}
+                    #     - **Channel**: {result.get("metadata", {}).get("channel", "N/A")}
+                    #     """)
 
 if __name__ == "__main__":
     main() 

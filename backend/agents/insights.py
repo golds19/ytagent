@@ -1,5 +1,7 @@
+import os
 from langchain_openai import ChatOpenAI
 from langchain_ollama import OllamaLLM
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import time
 from openai import RateLimitError
@@ -15,6 +17,8 @@ logger = logging.getLogger(__name__)
 # loading the environment variables from the .env file
 load_dotenv()
 
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+
 # Initialize LLMs
 openai_llm = ChatOpenAI(
     temperature=0,
@@ -25,6 +29,11 @@ ollama_llm = OllamaLLM(
     model="llama3.2:latest",
     temperature=0
 )
+geminiLlm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash", 
+    google_api_key=GEMINI_API_KEY
+)
+
 
 def get_insights_prompt(summaries: List[Dict[str, Any]], video_type: str) -> str:
     """
@@ -120,25 +129,25 @@ def extract_insights(summaries: List[Dict[str, Any]], classification: str) -> Di
             result = openai_llm.invoke(prompt)
             insights_text = result.content if hasattr(result, 'content') else result
         except Exception as e:
-            logger.warning(f"OpenAI error, falling back to Ollama: {e}")
+            logger.warning(f"OpenAI error, falling back to Gemini: {e}")
             try:
-                # Fallback to Ollama
-                logger.info(f"Using Ollama for {video_type} insight extraction")
-                result = ollama_llm.invoke(prompt)
+                # Fallback to Gemini
+                logger.info(f"Using Gemini for {video_type} insight extraction")
+                result = geminiLlm.invoke(prompt)
                 if not result:
-                    raise Exception("Empty response from Ollama")
+                    raise Exception("Empty response from Gemini")
                 insights_text = result.content if hasattr(result, 'content') else result
             except Exception as e:
-                logger.error(f"Ollama error: {e}")
-                raise Exception(f"Both OpenAI and Ollama failed: {str(e)}")
-                
+                logger.error(f"Gemini error: {e}")
+                raise Exception(f"Both OpenAI and Gemini failed: {str(e)}")
+
         # Create insights object with metadata
         insights = {
             "content": insights_text,
             "metadata": {
                 "video_type": video_type,
                 "created_at": datetime.now().isoformat(),
-                "model_used": "openai" if "openai" in str(type(result)) else "ollama",
+                "model_used": "openai" if "openai" in str(type(result)) else "gemini",
                 "num_segments": len(summaries)
             }
         }
