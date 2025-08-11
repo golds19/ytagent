@@ -75,7 +75,7 @@ To run the app using **prebuilt Docker Hub images**:
 ### 1. Create `docker-compose.yml`
 
 ```yaml
-version: '3.10'
+version: '3.11'
 
 services:
   backend:
