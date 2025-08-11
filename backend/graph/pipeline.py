@@ -1,11 +1,11 @@
 from typing import Dict, Any, List, Optional, TypedDict, NotRequired
 import logging
 from langgraph.graph import StateGraph
-from backend.agents.transcriber import transcriber_node
-from backend.agents.classifier import classifier_node
-from backend.agents.segmenter import segmenter_node
-from backend.agents.summarizer import summarizer_node
-from backend.agents.insights import insights_node
+from agents.transcriber import transcriber_node
+from agents.classifier import classifier_node
+from agents.segmenter import segmenter_node
+from agents.summarizer import summarizer_node
+from agents.insights import insights_node
 from datetime import datetime
 
 # Configure logging
