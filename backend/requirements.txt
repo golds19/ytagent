@@ -6,7 +6,12 @@ python-dotenv
 requests
 langgraph
 langchain_community
+langchain-google-genai
+langchain-ollama
 langsmith
 fastapi
 uvicorn
 langchain-openai
+beautifulsoup4
+firecrawl
+yt-dlp

@@ -17,6 +17,8 @@ myenv/
 .mypy_cache/
 .pytest_cache/
 .env/
+data_analysis/
+
 
 # OS-specific
 Thumbs.db
