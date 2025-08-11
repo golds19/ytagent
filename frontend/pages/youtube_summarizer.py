@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import os
 from dotenv import load_dotenv
+from utils.pdf_utils import generate_pdf_bytes
 
 # Load environment variables
 load_dotenv()
@@ -30,61 +31,54 @@ def process_video(youtube_url: str):
         return None
 
 def main():
-    # Page config
     st.set_page_config(
         page_title="YouTube Video Summarizer",
         page_icon="📺",
         layout="wide"
     )
-    
-    # Add home button
+
+    # Initialize session state for results
+    if "result" not in st.session_state:
+        st.session_state.result = None
+
     if st.button("🏠 Home"):
         st.switch_page("app.py")
-    
-    # Title and description
+
     st.title("📺 YouTube Video Summarizer")
-    st.markdown("""
-    Get an AI-powered summary of any YouTube video. Just paste the URL below.
-    """)
-    
-    # URL input
+    st.markdown("Get an AI-powered summary of any YouTube video. Just paste the URL below.")
+
     video_url = st.text_input(
         "Enter YouTube URL",
         placeholder="https://www.youtube.com/watch?v=..."
     )
-    
-    # Process button
+
     if st.button("Generate Summary", type="primary", disabled=not video_url):
         with st.spinner("Processing video..."):
             result = process_video(video_url)
-            
             if result:
+                st.session_state.result = result  # Save to session state
                 st.success("Video processed successfully!")
-                
-                # Display summary sections
-                with st.container():
-                    st.subheader("📝 Summary")
-                    if result.get("summaries"):
-                        for summary in result["summaries"]:
-                            # Assuming each summary is a dictionary with a 'content' key
-                            st.markdown(summary.get("content", "No content available."))  # Display the content of the summary
-                    else:
-                        st.markdown("No summaries available.")
-                    
-                    # Display chapters if available
-                    # if "chapters" in result:
-                    #     st.subheader("📚 Chapters")
-                    #     for chapter in result["chapters"]:
-                    #         st.markdown(f"**{chapter['title']}**")
-                    #         st.markdown(chapter['content'])
-                    
-                    # Display metadata
-                    # with st.expander("📊 Video Metadata"):
-                    #     st.markdown(f"""
-                    #     - **Title**: {result.get("metadata", {}).get("title", "N/A")}
-                    #     - **Duration**: {result.get("metadata", {}).get("duration", "N/A")}
-                    #     - **Channel**: {result.get("metadata", {}).get("channel", "N/A")}
-                    #     """)
+
+    # Display summary from session state if available
+    if st.session_state.result:
+        result = st.session_state.result
+
+        st.subheader("📝 Summary")
+        summaries_ = result.get("summaries", [])
+        for summary in summaries_:
+            st.markdown(summary.get("content", "No content available."))
+
+        # Prepare PDF from summaries
+        summary_texts = [s.get("content", "") if isinstance(s, dict) else str(s) for s in summaries_]
+        pdf_bytes = generate_pdf_bytes(summary_texts)
+
+        if pdf_bytes:
+            st.download_button(
+                label="Download Summary as PDF",
+                data=pdf_bytes,
+                file_name="summary.pdf",
+                mime="application/pdf"
+            )
 
 if __name__ == "__main__":
-    main() 
+    main()

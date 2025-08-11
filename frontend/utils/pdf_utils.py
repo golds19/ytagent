@@ -9,7 +9,7 @@ class PDF(FPDF):
         self.add_font('DejaVu', '', os.path.join(os.path.dirname(__file__), 'fonts/ttf/DejaVuSans.ttf'), uni=True)
         self.add_font('DejaVu', 'B', os.path.join(os.path.dirname(__file__), 'fonts/ttf/DejaVuSans-Bold.ttf'), uni=True)
 
-def generate_pdf_bytes(summaries, insights):
+def generate_pdf_bytes(summaries):
     """
     Generate PDF with Unicode support using DejaVu Sans font
     """
@@ -39,18 +39,18 @@ def generate_pdf_bytes(summaries, insights):
         
         pdf.set_font('DejaVu', '', size=12)
         # Handle insights content
-        if insights:
-            for line in insights.split('\n'):
-                pdf.multi_cell(0, 10, line.strip())
+        # if insights:
+        #     for line in insights.split('\n'):
+        #         pdf.multi_cell(0, 10, line.strip())
         
         # Export to bytes with UTF-8 encoding
         return pdf.output(dest='S').encode('latin-1')
     except Exception as e:
         # If there's an encoding error, try to clean the text
         print(f"PDF Generation Error: {str(e)}")
-        return generate_pdf_bytes_fallback(summaries, insights)
+        return generate_pdf_bytes_fallback(summaries)
 
-def generate_pdf_bytes_fallback(summaries, insights):
+def generate_pdf_bytes_fallback(summaries):
     """
     Fallback method with basic ASCII conversion
     """
@@ -85,8 +85,8 @@ def generate_pdf_bytes_fallback(summaries, insights):
     content = clean_text(summaries if isinstance(summaries, str) else "\n".join(summaries))
     pdf.multi_cell(0, 10, content)
     
-    pdf.ln(10)
-    pdf.cell(0, 10, "Key Insights", ln=True)
-    pdf.multi_cell(0, 10, clean_text(insights))
+    # pdf.ln(10)
+    # pdf.cell(0, 10, "Key Insights", ln=True)
+    # pdf.multi_cell(0, 10, clean_text(insights))
     
     return pdf.output(dest='S').encode('latin-1')
