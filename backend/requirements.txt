@@ -16,3 +16,4 @@ beautifulsoup4
 firecrawl
 yt-dlp
 dotenv
+typing-extensions
