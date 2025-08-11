@@ -1,6 +1,6 @@
 from typing import Dict, Any, List, Optional, TypedDict, NotRequired
 import logging
-from langgraph.graph import Graph, StateGraph
+from langgraph.graph import StateGraph
 from backend.agents.transcriber import transcriber_node
 from backend.agents.classifier import classifier_node
 from backend.agents.segmenter import segmenter_node
@@ -28,7 +28,7 @@ class PipelineState(TypedDict):
     generated_insights: Optional[Dict[str, Any]]
     metadata: Dict[str, Any]
 
-def create_pipeline() -> Graph:
+def create_pipeline():
     """
     Create the processing pipeline for video content.
     Flow: Transcriber → Classifier → Segmenter → Summarizer → Insights
