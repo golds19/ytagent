@@ -75,7 +75,7 @@ To run the app using **prebuilt Docker Hub images**:
 ### 1. Create `docker-compose.yml`
 
 ```yaml
-version: '3.11'
+version: '3.8'
 
 services:
   backend:
@@ -85,14 +85,27 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    networks:
+      - app-network
 
   frontend:
     image: benphil/yt-summarizer-frontend:latest
     container_name: yt-frontend
     ports:
       - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - RUNNING_IN_DOCKER=true
+    env_file:
+      - .env
     depends_on:
       - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 ```
 
 ### 2. Add Your `.env` File

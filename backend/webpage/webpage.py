@@ -3,14 +3,17 @@ import time
 import requests
 from typing import Dict, Optional, Union
 from urllib.parse import urlparse, urljoin
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 from firecrawl import FirecrawlApp
 from langchain_ollama.llms import OllamaLLM
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 import re
 from webpage.prompt import summary_prompt
 
 load_dotenv()
+
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 class WebpageError(Exception):
     """Base exception class for webpage summarizer errors"""
@@ -52,7 +55,8 @@ class WebpageSummarizer:
         
         # Initialize FireCrawl with API key
         self.scraper = FirecrawlApp(api_key=self.api_key)
-        self.llm = OllamaLLM(model="llama3.2:latest")  # Using llama3.2 as default model
+        #self.llm = OllamaLLM(model="llama3.2:latest")  # Using llama3.2 as default model
+        self.llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", google_api_key=GEMINI_API_KEY)
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": self.USER_AGENT})
 
@@ -268,7 +272,8 @@ class WebpageSummarizer:
             Summary:"""
 
             summary = self.llm.invoke(prompt)
-            return summary.strip()
+            #return summary.strip()
+            return summary.content.strip() if hasattr(summary, 'content') else summary.strip()
 
         except Exception as e:
             raise SummarizationError(f"Failed to generate summary: {str(e)}")

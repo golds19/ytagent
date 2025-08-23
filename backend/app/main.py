@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 import sys
 import os
 import asyncio
-from starlette.middleware.base import BaseHTTPMiddleware
+# from starlette.middleware.base import BaseHTTPMiddleware
 import time
 from datetime import datetime
 
@@ -18,16 +18,16 @@ from webpage.webpage import WebpageSummarizer
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class TimeoutMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        try:
-            start_time = time.time()
-            response = await call_next(request)
-            process_time = time.time() - start_time
-            response.headers["X-Process-Time"] = str(process_time)
-            return response
-        except asyncio.TimeoutError:
-            return HTTPException(status_code=504, detail="Request timeout")
+# class TimeoutMiddleware(BaseHTTPMiddleware):
+#     async def dispatch(self, request: Request, call_next):
+#         try:
+#             start_time = time.time()
+#             response = await call_next(request)
+#             process_time = time.time() - start_time
+#             response.headers["X-Process-Time"] = str(process_time)
+#             return response
+#         except asyncio.TimeoutError:
+#             return HTTPException(status_code=504, detail="Request timeout")
 
 class VideoRequest(BaseModel):
     youtube_url: str
@@ -72,7 +72,7 @@ app.add_middleware(
 )
 
 # Add timeout middleware
-app.add_middleware(TimeoutMiddleware)
+# app.add_middleware(TimeoutMiddleware)
 
 @app.post("/summarize", response_model=ProcessingResponse)
 async def summarize_video(request: VideoRequest):
@@ -137,7 +137,7 @@ async def summarize_video(request: VideoRequest):
             status_code=500,
             detail=f"Internal server error: {error_detail}"
         )
-
+    
 @app.post("/api/webpage/summarize", response_model=WebpageSummaryResponse)
 async def summarize_webpage(request: WebpageRequest):
     """
@@ -150,15 +150,57 @@ async def summarize_webpage(request: WebpageRequest):
         # Process URL and get response
         result = summarizer.process_url(request.url)
         
-        # Return the complete response
+        # Check if result has the required 'summary' field
+        if 'summary' not in result:
+            # If summary is missing, create a proper error response
+            return WebpageSummaryResponse(
+                status="error",
+                summary="",  # Provide empty summary for errors
+                metadata=WebpageMetadata(
+                    url=request.url,
+                    timestamp=datetime.now().isoformat()
+                ),
+                error=result.get('error', 'Failed to generate summary')
+            )
+        
+        # Return the complete response (success case)
         return result
         
     except Exception as e:
         logging.error(f"Error summarizing webpage: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to summarize webpage: {str(e)}"
+        
+        # Return proper error response with all required fields
+        return WebpageSummaryResponse(
+            status="error",
+            summary="",  # Required field, empty for errors
+            metadata=WebpageMetadata(
+                url=request.url,
+                timestamp=datetime.now().isoformat()
+            ),
+            error=f"Failed to summarize webpage: {str(e)}"
         )
+
+# @app.post("/api/webpage/summarize", response_model=WebpageSummaryResponse)
+# async def summarize_webpage(request: WebpageRequest):
+#     """
+#     Summarize content from a webpage URL
+#     """
+#     try:
+#         # Initialize summarizer
+#         summarizer = WebpageSummarizer()
+        
+#         # Process URL and get response
+#         result = summarizer.process_url(request.url)
+        
+#         # Return the complete response
+#         return result
+        
+#     except Exception as e:
+#         logging.error(f"Error summarizing webpage: {str(e)}")
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Failed to summarize webpage: {str(e)}"
+#         )
 
 @app.get("/health")
 async def health_check():
