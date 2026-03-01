@@ -1,92 +1,75 @@
+"""
+PDF generation utilities for ReelifyAI.
+
+Requires fpdf2 >= 2.7.0 (install via `pip install fpdf2`).
+The old fpdf 1.7.2 is NOT compatible with this module.
+"""
 from fpdf import FPDF
-import io
-import os
+from typing import List
 
-class PDF(FPDF):
-    def __init__(self):
-        super().__init__()
-        # Enable UTF-8 encoding
-        self.add_font('DejaVu', '', os.path.join(os.path.dirname(__file__), 'fonts/ttf/DejaVuSans.ttf'), uni=True)
-        self.add_font('DejaVu', 'B', os.path.join(os.path.dirname(__file__), 'fonts/ttf/DejaVuSans-Bold.ttf'), uni=True)
 
-def generate_pdf_bytes(summaries):
-    """
-    Generate PDF with Unicode support using DejaVu Sans font
-    """
-    try:
-        # Create PDF object with Unicode support
-        pdf = PDF()
-        pdf.add_page()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        
-        # Set font to DejaVu (supports full Unicode)
-        pdf.set_font('DejaVu', 'B', size=14)
-        pdf.cell(0, 10, "Summary", ln=True)
-        pdf.ln(5)
-        
-        # Add summary content
-        pdf.set_font('DejaVu', '', size=12)
-        content = summaries if isinstance(summaries, str) else "\n".join(summaries)
-        # Split content into lines and add them one by one
-        for line in content.split('\n'):
-            pdf.multi_cell(0, 10, line.strip())
-        pdf.ln(10)
-        
-        # Add insights section
-        pdf.set_font('DejaVu', 'B', size=14)
-        pdf.cell(0, 10, "Key Insights", ln=True)
-        pdf.ln(5)
-        
-        pdf.set_font('DejaVu', '', size=12)
-        # Handle insights content
-        # if insights:
-        #     for line in insights.split('\n'):
-        #         pdf.multi_cell(0, 10, line.strip())
-        
-        # Export to bytes with UTF-8 encoding
-        return pdf.output(dest='S').encode('latin-1')
-    except Exception as e:
-        # If there's an encoding error, try to clean the text
-        print(f"PDF Generation Error: {str(e)}")
-        return generate_pdf_bytes_fallback(summaries)
+def _safe(text: str) -> str:
+    """Encode text to Latin-1, replacing unsupported characters with '?'."""
+    if not text:
+        return ""
+    return text.encode("latin-1", errors="replace").decode("latin-1")
 
-def generate_pdf_bytes_fallback(summaries):
+
+def generate_repurpose_pdf(result: dict) -> bytes:
     """
-    Fallback method with basic ASCII conversion
+    Build a formatted PDF from a /repurpose API response.
+
+    Args:
+        result: dict with keys 'summary', 'tweet_thread' (list), 'blog_intro'
+
+    Returns:
+        PDF content as bytes, ready for st.download_button.
     """
+    summary: str = result.get("summary", "")
+    tweets: List[str] = result.get("tweet_thread", [])
+    blog: str = result.get("blog_intro", "")
+
     pdf = FPDF()
-    pdf.add_page()
     pdf.set_auto_page_break(auto=True, margin=15)
-    
-    # Use built-in Arial font
-    pdf.set_font('Arial', size=12)
-    
-    # Convert bullet points and special characters to basic ASCII
-    def clean_text(text):
-        if not text:
-            return ""
-        # Replace common Unicode characters with ASCII equivalents
-        replacements = {
-            '•': '*',  # Replace bullet with asterisk
-            '→': '->',  # Replace arrow
-            '"': '"',  # Replace smart quotes
-            '"': '"',
-            ''': "'",
-            ''': "'",
-            '…': '...',
-            '–': '-',
-            '—': '-',
-        }
-        for old, new in replacements.items():
-            text = text.replace(old, new)
-        return text
-    
-    pdf.cell(0, 10, "Summary", ln=True)
-    content = clean_text(summaries if isinstance(summaries, str) else "\n".join(summaries))
-    pdf.multi_cell(0, 10, content)
-    
-    # pdf.ln(10)
-    # pdf.cell(0, 10, "Key Insights", ln=True)
-    # pdf.multi_cell(0, 10, clean_text(insights))
-    
-    return pdf.output(dest='S').encode('latin-1')
+    pdf.add_page()
+
+    # ── Header ────────────────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", style="B", size=20)
+    pdf.cell(0, 12, "ReelifyAI - Content Package", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_draw_color(108, 99, 255)
+    pdf.set_line_width(0.5)
+    pdf.line(pdf.get_x(), pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
+    pdf.ln(6)
+
+    # ── Summary ───────────────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", style="B", size=14)
+    pdf.cell(0, 8, "Summary", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_font("Helvetica", size=11)
+    pdf.multi_cell(0, 6, _safe(summary))
+    pdf.ln(8)
+
+    # ── Tweet Thread ──────────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", style="B", size=14)
+    pdf.cell(0, 8, "Tweet Thread", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    for i, tweet in enumerate(tweets, 1):
+        pdf.set_font("Helvetica", style="B", size=9)
+        pdf.cell(0, 6, f"Tweet {i} of {len(tweets)}", new_x="LMARGIN", new_y="NEXT")
+        pdf.set_font("Helvetica", size=11)
+        pdf.multi_cell(0, 6, _safe(tweet))
+        pdf.ln(3)
+    pdf.ln(5)
+
+    # ── Blog Introduction ─────────────────────────────────────────────────────
+    pdf.set_font("Helvetica", style="B", size=14)
+    pdf.cell(0, 8, "Blog Introduction", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(2)
+    pdf.set_font("Helvetica", size=11)
+    for para in blog.split("\n"):
+        para = para.strip()
+        if para:
+            pdf.multi_cell(0, 6, _safe(para))
+            pdf.ln(3)
+
+    return bytes(pdf.output())

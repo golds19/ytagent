@@ -1,7 +1,11 @@
 import os
+import sys
 import requests
 import streamlit as st
 from dotenv import load_dotenv
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from utils.pdf_utils import generate_repurpose_pdf
 
 load_dotenv()
 
@@ -271,3 +275,17 @@ if st.session_state.repurpose_result:
         st.markdown(f"<div class='output-card'>{blog_html}</div>", unsafe_allow_html=True)
         st.markdown("<div class='section-label' style='margin-top:16px'>Copy</div>", unsafe_allow_html=True)
         st.code(blog, language="")
+
+    # ── PDF download ──────────────────────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    try:
+        pdf_bytes = generate_repurpose_pdf(data)
+        st.download_button(
+            label="⬇️ Download as PDF",
+            data=pdf_bytes,
+            file_name="reelifyai-content-package.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+    except Exception as e:
+        st.warning(f"PDF generation failed: {e}")
