@@ -50,3 +50,7 @@ workflow_graph.*
 .langgraph/
 streamlit_logs/
 .dockerignore
+
+# additional settings
+CLAUDE.md
+backend.log

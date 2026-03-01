@@ -1,124 +1,70 @@
-# 🎬 YouTube Transcript Summarizer
+# ReelifyAI
 
-A lightweight app that summarizes YouTube videos using their transcripts with the help of OpenAI's language models. Built with **FastAPI** (backend) and **Streamlit** (frontend), this project provides a clean and responsive interface for quick insights from YouTube content.
+Paste a YouTube URL — get a tweet thread, summary, and blog intro in seconds.
 
----
+## What it does
 
-## 🚀 Features
+- **Summary** — 3-sentence paragraph capturing the core message and key takeaway
+- **Tweet Thread** — 5-tweet thread ready to post, hook through call-to-action
+- **Blog Intro** — 3-paragraph opener: hook, context, and article preview
 
-- 📄 Summarizes video transcripts (no audio processing).
-- ⚡ Powered by OpenAI's LLM (GPT-based).
-- 🖥️ Dual interface: FastAPI backend + Streamlit frontend.
-- 📦 Clean modular codebase, ready for extension.
+## Tech Stack
 
----
+FastAPI · LangChain · OpenAI GPT-4o-mini · Gemini 2.5 Flash (fallback) · LangGraph · Streamlit · Docker
 
-## 🔧 Tech Stack
-
-- **Backend:** FastAPI, LangChain, OpenAI
-- **Frontend:** Streamlit
-- **Other Libraries:** fpdf, youtube-transcript-api, pydantic, dotenv
-- **Deployment Ready:** Docker support (CI/CD + local setup)
-
----
-
-## 🧠 Requirements
+## Requirements
 
 - Python 3.10+
-- An OpenAI API Key
+- `OPENAI_API_KEY` (required)
+- `GOOGLE_API_KEY` (optional — Gemini fallback)
 
----
+## Running Locally
 
-## 📦 Installation & Running Locally
+### Option A — Launch script (recommended)
 
-### 1. Clone the Repo
-
-```bash
-git clone https://github.com/golds/ytagent.git
-cd ytagent
-````
-
-### 2. Set Up the Environment
+Starts the backend, waits for it to be healthy, then starts the frontend.
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+bash start.sh
+```
+
+- Backend: http://localhost:8000
+- Frontend: http://localhost:8501
+- Backend logs: `backend.log`
+
+Press `Ctrl+C` to stop both services.
+
+### Option B — Manual (two terminals)
+
+**Terminal 1 — Backend:**
+
+```bash
+cd backend
 pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 3. Add Your API Key
-
-Create a `.env` file in the root directory and add:
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-```
-
-### 4. Run Backend (FastAPI)
+**Terminal 2 — Frontend:**
 
 ```bash
-uvicorn app.main:app --reload --port 8000
+cd frontend
+pip install -r requirements.txt
+streamlit run app.py --server.port 8501
 ```
 
-### 5. Run Frontend (Streamlit)
+## Running with Docker
 
-```bash
-streamlit run frontend/app.py
-```
+Uses prebuilt images from Docker Hub — no local build required.
 
----
+1. Create a `.env` file (see [Environment Variables](#environment-variables) below).
 
-## 🐳 Run with Docker Compose
-
-To run the app using **prebuilt Docker Hub images**:
-
-### 1. Create `docker-compose.yml`
-
-```yaml
-version: '3.8'
-
-services:
-  backend:
-    image: benphil/yt-summarizer-backend:latest
-    container_name: yt-backend
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    networks:
-      - app-network
-
-  frontend:
-    image: benphil/yt-summarizer-frontend:latest
-    container_name: yt-frontend
-    ports:
-      - "8501:8501"
-    environment:
-      - BACKEND_URL=http://backend:8000
-      - RUNNING_IN_DOCKER=true
-    env_file:
-      - .env
-    depends_on:
-      - backend
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-```
-
-### 2. Add Your `.env` File
-
-```env
-OPENAI_API_KEY=your_openai_api_key
-```
-
-### 3. Run the App
+2. Start the stack:
 
 ```bash
 docker-compose up
 ```
+
+3. Open http://localhost:8501.
 
 To stop:
 
@@ -126,25 +72,39 @@ To stop:
 docker-compose down
 ```
 
----
+## Environment Variables
 
-## 🔄 CI/CD (GitHub Actions + Docker Hub)
+Create a `.env` file in the project root:
 
-This project supports CI/CD using GitHub Actions to automatically build and push Docker images to Docker Hub upon pushing to `main`.
----
+```env
+OPENAI_API_KEY=sk-...
+GOOGLE_API_KEY=AIza...      # optional — enables Gemini fallback
+BACKEND_URL=http://localhost:8000
+RUNNING_IN_DOCKER=false
+```
 
-## 📌 Notes
+When running with Docker Compose, `RUNNING_IN_DOCKER` is set automatically. `BACKEND_URL` inside the container resolves via the service name (`http://backend:8000`).
 
-* This version **does not use Whisper/audio**, only transcript-based.
-* **No open-source models** are integrated yet.
-* Segmenter Agent is **not used** in this version.
-* Docker and Whisper integration are planned for future updates.
+## API Endpoints
 
----
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/repurpose` | YouTube URL → `{summary, tweet_thread, blog_intro}` |
+| `POST` | `/summarize` | YouTube URL → full pipeline (segments + insights) |
+| `GET` | `/health` | Health check |
 
-## ✨ Future Improvements
+**`POST /repurpose` request body:**
 
-* Add Whisper for transcript generation from raw audio.
-* Integrate open-source LLMs like DeepSeek or Mistral.
-* Advanced CI/CD (multi-stage builds, tests).
-* Frontend enhancements with richer visual summaries.
+```json
+{ "url": "https://www.youtube.com/watch?v=..." }
+```
+
+**Response:**
+
+```json
+{
+  "summary": "...",
+  "tweet_thread": ["tweet 1", "tweet 2", "tweet 3", "tweet 4", "tweet 5"],
+  "blog_intro": "..."
+}
+```
