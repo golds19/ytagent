@@ -6,7 +6,8 @@
       "Bash(\"C:\\\\Research Folder\\\\ytsum\\\\ytagent\\\\myenv\\\\Scripts\\\\python.exe\":*)",
       "Bash(\"C:\\\\Research Folder\\\\ytsum\\\\ytagent\\\\myenv\\\\Scripts\\\\pip.exe\" install:*)",
       "Bash(\"C:\\\\Research:*)",
-      "Bash(myenv/Scripts/python.exe:*)"
+      "Bash(myenv/Scripts/python.exe:*)",
+      "Bash(ls:*)"
     ]
   }
 }

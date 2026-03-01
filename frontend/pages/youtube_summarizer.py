@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import requests
 import streamlit as st
@@ -188,6 +189,16 @@ def char_count_class(n: int) -> str:
     return ""
 
 
+_YT_RE = re.compile(
+    r'^(https?://)?(www\.)?(youtube\.com/watch\?.*v=[a-zA-Z0-9_-]{11}|youtu\.be/[a-zA-Z0-9_-]{11})',
+    re.IGNORECASE,
+)
+
+
+def is_valid_youtube_url(url: str) -> bool:
+    return bool(_YT_RE.match(url.strip()))
+
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 
 if st.button("← Back", type="secondary"):
@@ -212,16 +223,26 @@ if "repurpose_result" not in st.session_state:
     st.session_state.repurpose_result = None
 if "repurpose_error" not in st.session_state:
     st.session_state.repurpose_error = None
+if "last_url" not in st.session_state:
+    st.session_state.last_url = None
 
 if generate_clicked and url_input.strip():
-    st.session_state.repurpose_result = None
-    st.session_state.repurpose_error = None
-    with st.spinner("Fetching transcript & crafting your content package..."):
-        result, error = repurpose_video(url_input.strip())
-    if error:
-        st.session_state.repurpose_error = error
+    if not is_valid_youtube_url(url_input.strip()):
+        st.session_state.repurpose_result = None
+        st.session_state.repurpose_error = (
+            "Please enter a valid YouTube URL "
+            "(e.g. https://youtube.com/watch?v=...)"
+        )
     else:
-        st.session_state.repurpose_result = result
+        st.session_state.repurpose_result = None
+        st.session_state.repurpose_error = None
+        st.session_state.last_url = url_input.strip()
+        with st.spinner("Fetching transcript & crafting your content package..."):
+            result, error = repurpose_video(url_input.strip())
+        if error:
+            st.session_state.repurpose_error = error
+        else:
+            st.session_state.repurpose_result = result
 
 # ── Error ─────────────────────────────────────────────────────────────────────
 if st.session_state.repurpose_error:
@@ -229,6 +250,17 @@ if st.session_state.repurpose_error:
         f"<div class='error-card'>⚠️ {st.session_state.repurpose_error}</div>",
         unsafe_allow_html=True,
     )
+    if st.session_state.last_url:
+        if st.button("↺ Try Again", type="primary"):
+            st.session_state.repurpose_result = None
+            st.session_state.repurpose_error = None
+            with st.spinner("Fetching transcript & crafting your content package..."):
+                result, error = repurpose_video(st.session_state.last_url)
+            if error:
+                st.session_state.repurpose_error = error
+            else:
+                st.session_state.repurpose_result = result
+            st.rerun()
 
 # ── Results ───────────────────────────────────────────────────────────────────
 if st.session_state.repurpose_result:
@@ -244,37 +276,42 @@ if st.session_state.repurpose_result:
     # ── Summary tab ───────────────────────────────────────────────────────────
     with tab1:
         st.markdown("<div class='section-label'>Video Summary</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='output-card'>{summary}</div>", unsafe_allow_html=True)
-        st.markdown("<div class='section-label' style='margin-top:16px'>Copy</div>", unsafe_allow_html=True)
-        st.code(summary, language="")
+        if summary:
+            st.markdown(f"<div class='output-card'>{summary}</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-label' style='margin-top:16px'>Copy</div>", unsafe_allow_html=True)
+            st.code(summary, language="")
+        else:
+            st.markdown("<div class='error-card'>No summary was generated for this video.</div>", unsafe_allow_html=True)
 
     # ── Tweet thread tab ──────────────────────────────────────────────────────
     with tab2:
         st.markdown("<div class='section-label'>5-Tweet Thread</div>", unsafe_allow_html=True)
-        all_tweets_text = "\n\n".join(
-            f"[{i+1}/5] {t}" for i, t in enumerate(tweets)
-        )
-        for i, tweet in enumerate(tweets):
-            n = len(tweet)
-            cls = char_count_class(n)
-            st.markdown(f"""
+        if tweets:
+            for i, tweet in enumerate(tweets):
+                n = len(tweet)
+                cls = char_count_class(n)
+                st.markdown(f"""
 <div class="tweet-card">
     <div class="tweet-num">Tweet {i + 1} of {len(tweets)}</div>
     <div class="tweet-text">{tweet}</div>
     <div class="tweet-count {cls}">{n}/280</div>
 </div>""", unsafe_allow_html=True)
-        st.markdown("<div class='section-label' style='margin-top:16px'>Copy All Tweets</div>", unsafe_allow_html=True)
-        st.code(all_tweets_text, language="")
+                st.code(tweet, language="")
+        else:
+            st.markdown("<div class='error-card'>No tweet thread was generated.</div>", unsafe_allow_html=True)
 
     # ── Blog intro tab ────────────────────────────────────────────────────────
     with tab3:
         st.markdown("<div class='section-label'>Blog Introduction</div>", unsafe_allow_html=True)
-        # Render paragraphs separated by blank lines
-        paragraphs = [p.strip() for p in blog.split("\n") if p.strip()]
-        blog_html = "".join(f"<p style='margin-bottom:1em'>{p}</p>" for p in paragraphs)
-        st.markdown(f"<div class='output-card'>{blog_html}</div>", unsafe_allow_html=True)
-        st.markdown("<div class='section-label' style='margin-top:16px'>Copy</div>", unsafe_allow_html=True)
-        st.code(blog, language="")
+        if blog:
+            # Render paragraphs separated by blank lines
+            paragraphs = [p.strip() for p in blog.split("\n") if p.strip()]
+            blog_html = "".join(f"<p style='margin-bottom:1em'>{p}</p>" for p in paragraphs)
+            st.markdown(f"<div class='output-card'>{blog_html}</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-label' style='margin-top:16px'>Copy</div>", unsafe_allow_html=True)
+            st.code(blog, language="")
+        else:
+            st.markdown("<div class='error-card'>No blog introduction was generated.</div>", unsafe_allow_html=True)
 
     # ── PDF download ──────────────────────────────────────────────────────────
     st.markdown("<br>", unsafe_allow_html=True)
