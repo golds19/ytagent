@@ -8,6 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 load_dotenv()
 
@@ -42,6 +43,22 @@ Here is the video transcript:
 Generate the content package now.
 """
 
+# Module-level — created once on startup, reused across all requests.
+_openai_llm = ChatOpenAI(
+    model="gpt-4o-mini",
+    api_key=os.getenv("OPENAI_API_KEY"),
+    temperature=0.7,
+    max_tokens=2000,
+)
+_gemini_llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    google_api_key=os.getenv("GOOGLE_API_KEY"),
+    temperature=0.7,
+    max_output_tokens=2000,
+)
+
+MAX_TRANSCRIPT_CHARS = 100_000  # ~25k tokens — well within model context limits
+
 
 def _build_chain(llm):
     prompt = ChatPromptTemplate.from_messages([
@@ -51,25 +68,27 @@ def _build_chain(llm):
     return prompt | llm | StrOutputParser()
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    reraise=True,
+)
+async def _invoke_with_retry(chain, transcript: str) -> str:
+    return await chain.ainvoke({"transcript": transcript})
+
+
 async def repurpose_transcript(transcript: str) -> dict:
-    openai_llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        api_key=os.getenv("OPENAI_API_KEY"),
-        temperature=0.7,
-        max_tokens=2000,
-    )
-    gemini_llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=os.getenv("GOOGLE_API_KEY"),
-        temperature=0.7,
-        max_output_tokens=2000,
-    )
+    if len(transcript) > MAX_TRANSCRIPT_CHARS:
+        logger.warning(
+            f"Transcript truncated from {len(transcript)} to {MAX_TRANSCRIPT_CHARS} chars"
+        )
+        transcript = transcript[:MAX_TRANSCRIPT_CHARS]
 
     raw = None
-    for llm, name in [(openai_llm, "OpenAI"), (gemini_llm, "Gemini")]:
+    for llm, name in [(_openai_llm, "OpenAI"), (_gemini_llm, "Gemini")]:
         try:
             chain = _build_chain(llm)
-            raw = await chain.ainvoke({"transcript": transcript})
+            raw = await _invoke_with_retry(chain, transcript)
             logger.info(f"Repurpose chain completed via {name}")
             break
         except Exception as e:

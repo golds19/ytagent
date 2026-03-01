@@ -62,6 +62,20 @@ SAMPLE_REPURPOSE_RESULT = {
 # Fixtures
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def clear_transcript_cache():
+    """Clear the router-level transcript TTLCache before each test.
+
+    The cache is a module-level object that persists across tests within the
+    same process. Without this fixture a URL cached by one test would produce
+    a spurious cache-hit in the next test, breaking error-path assertions.
+    """
+    from app.routers.repurpose import _transcript_cache
+    _transcript_cache.clear()
+    yield
+    _transcript_cache.clear()
+
+
 @pytest.fixture
 def sample_transcript() -> str:
     return SAMPLE_TRANSCRIPT
