@@ -54,3 +54,5 @@ streamlit_logs/
 # additional settings
 CLAUDE.md
 backend.log
+
+update_plan.md

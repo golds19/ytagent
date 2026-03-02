@@ -2,6 +2,22 @@
 
 Paste a YouTube URL — get a tweet thread, summary, and blog intro in seconds.
 
+---
+
+## 🖥️ App Preview
+
+<p align="center">
+  <a href="images/reelify01.png">
+    <img src="images/reelify01.png" width="48%" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="images/reelify.png">
+    <img src="images/reelify.png" width="48%" />
+  </a>
+</p>
+
+---
+
 ## What it does
 
 - **Summary** — 3-sentence paragraph capturing the core message and key takeaway
